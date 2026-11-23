@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter
-from solarpunk_dc_engine import run_full_audit
+from solarpunk_dc_engine import run_full_audit, compute_sensitivity_envelope
 
 
 def make_figure(audit: dict, out_path: Path) -> None:
@@ -123,6 +123,7 @@ def make_figure(audit: dict, out_path: Path) -> None:
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     audit = run_full_audit()
+    audit["sensitivity_envelope"] = compute_sensitivity_envelope()
 
     results_path = root / "results" / "solarpunk_dc_audit.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)

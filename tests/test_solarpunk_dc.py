@@ -14,6 +14,7 @@ from solarpunk_dc_engine import (
     compute_mof_algae_symbiosis,
     compute_acoustic_metamaterial_cloak,
     run_full_audit,
+    compute_sensitivity_envelope,
 )
 
 
@@ -73,3 +74,17 @@ def test_end_to_end_audit_and_artifacts():
     assert fig_path.exists()
     loaded = json.loads(json_path.read_text(encoding="utf-8"))
     assert loaded["module2_radiative_sky_cooling"]["pue_solarpunk"] < 1.04
+
+
+def test_sensitivity_envelope_tiers():
+    tiers = compute_sensitivity_envelope()
+    assert set(tiers.keys()) == {
+        "tier1_nearterm_humid",
+        "tier2_reference_clear",
+        "tier3_arid_highsolar",
+    }
+    assert tiers["tier1_nearterm_humid"]["compute_reduction_factor"] > 3.0
+    assert tiers["tier1_nearterm_humid"]["wue_l_per_kwh"] < 0.0
+    assert tiers["tier2_reference_clear"]["compute_reduction_factor"] > 8.0
+    assert tiers["tier3_arid_highsolar"]["water_harvest_l_day"] > 70.0
+    assert tiers["tier3_arid_highsolar"]["q_net_wm2"] > 100.0

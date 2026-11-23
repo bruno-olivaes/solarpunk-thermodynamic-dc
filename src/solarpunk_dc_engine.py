@@ -321,3 +321,78 @@ def run_full_audit(cfg: SolarpunkNodeConfig | None = None) -> Dict[str, Any]:
         "module3_mof_algae_symbiosis": symbiosis,
         "module4_acoustic_metamaterial": acoustics,
     }
+
+
+def compute_sensitivity_envelope() -> Dict[str, Any]:
+    """Evaluate three hardware-readiness & climate boundary tiers (near-term, reference, arid)."""
+    tiers = {}
+
+    # Tier 1: Near-term CMOS + MPS + Markov sparse gating only (no analog Boltzmann chip), humid/cloudy (75% RH)
+    cfg_t1 = SolarpunkNodeConfig(
+        thermo_analog_gain=1.0,
+        probabilistic_workload_frac=0.0,
+        markov_active_duty=0.38,
+        mps_compression_factor=1.85,
+        io_memory_floor_frac=0.095,
+        pdrc_area_m2=90.0,
+        solar_irradiance_wm2=450.0,
+        tau_atm_zenith_window=0.68,
+        mof_regen_efficiency=0.78,
+        pbr_areal_productivity_kg_m2_day=0.115,
+    )
+    a1 = run_full_audit(cfg_t1)
+    tiers["tier1_nearterm_humid"] = {
+        "label": "Tier 1: Near-Term CMOS+MPS (Humid 75% RH)",
+        "p_it_kw": a1["module1_thermodynamic_core"]["p_it_solarpunk_kw"],
+        "compute_reduction_factor": a1["module1_thermodynamic_core"]["compute_reduction_factor"],
+        "p_total_kw": a1["module2_radiative_sky_cooling"]["p_total_solarpunk_kw"],
+        "q_net_wm2": a1["module2_radiative_sky_cooling"]["q_net_wm2"],
+        "pue": a1["module2_radiative_sky_cooling"]["pue_solarpunk"],
+        "ere": a1["module3_mof_algae_symbiosis"]["ere_solarpunk"],
+        "water_harvest_l_day": a1["module3_mof_algae_symbiosis"]["water_harvested_solarpunk_l_day"],
+        "wue_l_per_kwh": a1["module3_mof_algae_symbiosis"]["wue_solarpunk_l_per_kwh"],
+        "co2_captured_kg_day": a1["module3_mof_algae_symbiosis"]["co2_captured_kg_day"],
+        "noise_dba": a1["module4_acoustic_metamaterial"]["noise_solarpunk_dba"],
+    }
+
+    # Tier 2: Reference Hybrid Thermodynamic Node (Clear sky 45% RH)
+    a2 = run_full_audit(SolarpunkNodeConfig())
+    tiers["tier2_reference_clear"] = {
+        "label": "Tier 2: Reference Hybrid Node (Clear 45% RH)",
+        "p_it_kw": a2["module1_thermodynamic_core"]["p_it_solarpunk_kw"],
+        "compute_reduction_factor": a2["module1_thermodynamic_core"]["compute_reduction_factor"],
+        "p_total_kw": a2["module2_radiative_sky_cooling"]["p_total_solarpunk_kw"],
+        "q_net_wm2": a2["module2_radiative_sky_cooling"]["q_net_wm2"],
+        "pue": a2["module2_radiative_sky_cooling"]["pue_solarpunk"],
+        "ere": a2["module3_mof_algae_symbiosis"]["ere_solarpunk"],
+        "water_harvest_l_day": a2["module3_mof_algae_symbiosis"]["water_harvested_solarpunk_l_day"],
+        "wue_l_per_kwh": a2["module3_mof_algae_symbiosis"]["wue_solarpunk_l_per_kwh"],
+        "co2_captured_kg_day": a2["module3_mof_algae_symbiosis"]["co2_captured_kg_day"],
+        "noise_dba": a2["module4_acoustic_metamaterial"]["noise_solarpunk_dba"],
+    }
+
+    # Tier 3: Arid / Subtropical high-solar envelope (20% RH, elevated desorption energy)
+    cfg_t3 = SolarpunkNodeConfig(
+        t_amb_k=305.15,
+        t_panel_k=311.15,
+        solar_irradiance_wm2=1050.0,
+        tau_atm_zenith_window=0.92,
+        mof_regen_efficiency=0.48,
+        pbr_areal_productivity_kg_m2_day=0.165,
+    )
+    a3 = run_full_audit(cfg_t3)
+    tiers["tier3_arid_highsolar"] = {
+        "label": "Tier 3: Arid High-Solar Envelope (20% RH)",
+        "p_it_kw": a3["module1_thermodynamic_core"]["p_it_solarpunk_kw"],
+        "compute_reduction_factor": a3["module1_thermodynamic_core"]["compute_reduction_factor"],
+        "p_total_kw": a3["module2_radiative_sky_cooling"]["p_total_solarpunk_kw"],
+        "q_net_wm2": a3["module2_radiative_sky_cooling"]["q_net_wm2"],
+        "pue": a3["module2_radiative_sky_cooling"]["pue_solarpunk"],
+        "ere": a3["module3_mof_algae_symbiosis"]["ere_solarpunk"],
+        "water_harvest_l_day": a3["module3_mof_algae_symbiosis"]["water_harvested_solarpunk_l_day"],
+        "wue_l_per_kwh": a3["module3_mof_algae_symbiosis"]["wue_solarpunk_l_per_kwh"],
+        "co2_captured_kg_day": a3["module3_mof_algae_symbiosis"]["co2_captured_kg_day"],
+        "noise_dba": a3["module4_acoustic_metamaterial"]["noise_solarpunk_dba"],
+    }
+
+    return tiers

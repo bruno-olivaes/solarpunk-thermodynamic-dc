@@ -2047,5 +2047,46 @@
     "noise_baseline_dba": 78.5,
     "noise_solarpunk_dba": 26.747656944353583,
     "noise_reduction_dba": 51.75234305564642
+  },
+  "sensitivity_envelope": {
+    "tier1_nearterm_humid": {
+      "label": "Tier 1: Near-Term CMOS+MPS (Humid 75% RH)",
+      "p_it_kw": 31.716216216216218,
+      "compute_reduction_factor": 3.1529612270984235,
+      "p_total_kw": 32.016216216216215,
+      "q_net_wm2": 96.96847342423364,
+      "pue": 1.0094588836812952,
+      "ere": 0.2694588836812952,
+      "water_harvest_l_day": 347.9519698302954,
+      "wue_l_per_kwh": -0.4528329845419315,
+      "co2_captured_kg_day": 25.254,
+      "noise_dba": 26.747656944353583
+    },
+    "tier2_reference_clear": {
+      "label": "Tier 2: Reference Hybrid Node (Clear 45% RH)",
+      "p_it_kw": 11.417321428571428,
+      "compute_reduction_factor": 8.758621768303174,
+      "p_total_kw": 11.717321428571429,
+      "q_net_wm2": 114.11869178587418,
+      "pue": 1.0262758653049096,
+      "ere": 0.28627586530490967,
+      "water_harvest_l_day": 115.6218865116279,
+      "wue_l_per_kwh": -0.4111501620928496,
+      "co2_captured_kg_day": 32.5008,
+      "noise_dba": 26.747656944353583
+    },
+    "tier3_arid_highsolar": {
+      "label": "Tier 3: Arid High-Solar Envelope (20% RH)",
+      "p_it_kw": 11.417321428571428,
+      "compute_reduction_factor": 8.758621768303174,
+      "p_total_kw": 11.717321428571429,
+      "q_net_wm2": 138.19047407895624,
+      "pue": 1.0262758653049096,
+      "ere": 0.28627586530490967,
+      "water_harvest_l_day": 77.08125767441861,
+      "wue_l_per_kwh": -0.2741001080618997,
+      "co2_captured_kg_day": 36.234,
+      "noise_dba": 26.747656944353583
+    }
   }
 }
