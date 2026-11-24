@@ -1,5 +1,6 @@
 # Symbiotic Low-Entropy Micro-Data Centers (Paper 11)
 
+[![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24485297.svg)](https://doi.org/10.5281/zenodo.24485297)
 [![Paper PDF](https://img.shields.io/badge/Paper-PDF_Manuscript-red.svg)](Paper11_Solarpunk_Thermodynamic_Micro_Data_Centers.pdf)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
 [![Tests: 6/6](https://img.shields.io/badge/pytest-6%2F6_passed-brightgreen.svg)]()
