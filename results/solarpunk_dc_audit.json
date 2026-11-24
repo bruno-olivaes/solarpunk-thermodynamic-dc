@@ -59,7 +59,8 @@
     "pdrc_area_m2": 45.0,
     "q_rejected_max_kw": 5.1353411303643375,
     "q_unrecycled_kw": 2.968503571428572,
-    "passive_headroom_kw": 2.1668375589357654,
+    "q_roof_total_load_kw": 3.268503571428572,
+    "passive_headroom_kw": 1.8668375589357655,
     "p_total_baseline_kw": 142.0,
     "p_total_solarpunk_kw": 11.717321428571429,
     "total_grid_reduction_factor": 12.118810674063123,
@@ -68,14 +69,26 @@
   },
   "module3_mof_algae_symbiosis": {
     "q_mof_kw": 4.795275,
+    "q_mof_condensation_reject_kw": 3.0203541418604654,
+    "q_mof_sensible_reject_kw": 1.7749208581395348,
+    "mof_sorbent_mass_kg": 165.126944461051,
     "q_algae_kw": 3.653542857142857,
+    "q_pbr_facade_loss_wm2": 30.446190476190473,
+    "pbr_solar_chem_power_kw": 4.111111111111111,
     "q_reused_kw": 8.448817857142856,
+    "total_thermal_dissipation_accounted_kw": 11.717321428571427,
+    "energy_balance_residual_kw": 1.7763568394002505e-15,
     "ere_baseline": 1.42,
     "ere_solarpunk": 0.28627586530490967,
     "water_consumed_baseline_l_day": 6134.400000000001,
     "water_harvested_solarpunk_l_day": 115.6218865116279,
+    "pbr_water_consumption_l_day": 15.0,
+    "net_potable_water_export_l_day": 100.6218865116279,
     "wue_baseline_l_per_kwh": 1.8,
     "wue_solarpunk_l_per_kwh": -0.4111501620928496,
+    "wue_facility_net_l_per_kwh": -0.3578103263795436,
+    "wue_it_gross_l_per_kwh": -0.421953488372093,
+    "wue_it_net_l_per_kwh": -0.3672121023201982,
     "dry_biomass_kg_day": 17.759999999999998,
     "co2_captured_kg_day": 32.5008,
     "o2_released_kg_day": 23.6208
@@ -2046,7 +2059,9 @@
     "max_tl_50_250hz_db": 102.14877859465804,
     "noise_baseline_dba": 78.5,
     "noise_solarpunk_dba": 26.747656944353583,
-    "noise_reduction_dba": 51.75234305564642
+    "noise_reduction_dba": 51.75234305564642,
+    "flanking_limit_db": 58.0,
+    "noise_flanking_limited_dba": 27.01018636970327
   },
   "sensitivity_envelope": {
     "tier1_nearterm_humid": {

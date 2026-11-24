@@ -17,9 +17,9 @@ A coupled physical simulation and system-level exergy audit demonstrating how co
 | **Total Facility Grid Draw** | $142.00\text{ kW}$ | **$11.72\text{ kW}$** | **$12.12\times$ reduction** ($PUE = 1.026$) |
 | **Physical Enclosure Volume** | $12.50\text{ m}^3$ | **$1.75\text{ m}^3$** | **$86.0\%$ smaller** (fanless two-phase immersion) |
 | **Sky Radiative Flux ($8\text{--}13\ \mu\text{m}$)** | Active chillers | **$+114.12\text{ W/m}^2$** | **$5.14\text{ kW}_{\mathrm{th}}$** passive sink to $3\text{ K}$ space |
-| **Water Balance ($WUE$)** | $-6,134.4\text{ L/day}$ ($+1.80$) | **$+115.62\text{ L/day}$ ($-0.411$)** | **Net water generator** via MOF-303 |
-| **Bio-Carbon & $\mathrm{O}_2$ Yield** | $0$ | **$32.50\text{ kg CO}_2$ / $23.62\text{ kg O}_2\text{/d}$** | $17.76\text{ kg/day}$ dry *Chlorella* ($ERE = 0.286$) |
-| **Exterior Noise at $1\text{ m}$** | $78.5\text{ dBA}$ | **$26.7\text{ dBA}$** | **$63.62\text{ dB}$** $50\text{--}250\text{ Hz}$ metamaterial cloak |
+| **Water Balance ($WUE_{\mathrm{fac}}$)** | $-6,134.4\text{ L/day}$ ($+1.80$) | **$+115.62\text{ L/d}$ gross ($-0.411$) / $+100.62\text{ L/d}$ net ($-0.358$)** | $WUE_{\mathrm{IT}} = -0.422$ gross / $-0.367$ net ($165.1\text{ kg}$ MOF-303) |
+| **Bio-Carbon & $\mathrm{O}_2$ Yield** | $0$ | **$32.50\text{ kg CO}_2$ / $23.62\text{ kg O}_2\text{/d}$** | $17.76\text{ kg/d}$ dry *Chlorella* ($4.11\text{ kW}_{\mathrm{chem}}$ solar; $3.65\text{ kW}_{\mathrm{th}}$ closed loss) |
+| **Exterior Noise at $1\text{ m}$** | $78.5\text{ dBA}$ | **$26.7\text{ dBA}$ ideal ($27.0\text{ dBA}$ flanked)** | **$63.62\text{ dB}$** $50\text{--}250\text{ Hz}$ metamaterial + $58\text{ dB}$ structural cap |
 
 ### Three-Tier Hardware & Climate Sensitivity Envelope
 

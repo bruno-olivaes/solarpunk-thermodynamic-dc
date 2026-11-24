@@ -121,7 +121,7 @@ def _planck_spectral_radiance(lam_m: np.ndarray, temp_k: float) -> np.ndarray:
 
 
 def compute_radiative_sky_cooling(cfg: SolarpunkNodeConfig, p_it_sol_kw: float) -> Dict[str, Any]:
-    """Evaluate 8-13 um selective photonic metasurface radiative sky cooling & facility PUE."""
+    """Evaluate 8-13 um selective photonic metasurface radiative sky cooling & closed-loop roof load."""
     lam_um = np.linspace(2.5, 45.0, 900)
     lam_m = lam_um * 1e-6
     in_window = (lam_um >= 8.0) & (lam_um <= 13.0)
@@ -142,7 +142,6 @@ def compute_radiative_sky_cooling(cfg: SolarpunkNodeConfig, p_it_sol_kw: float) 
     p_rad_wm2 = math.pi * float(np.trapezoid(eps_s * ibb_panel, lam_m))
 
     # Downwelling atmospheric radiation P_atm = 2*pi * int cos(t)sin(t) dt * int eps_s * eps_atm(t) * I_bb(T_amb) dlam
-    # Vectorized over (theta, lambda)
     eps_atm_2d = 1.0 - np.power(tau_zen[None, :], 1.0 / cos_t[:, None])
     inner_lam = np.trapezoid(eps_s[None, :] * eps_atm_2d * ibb_amb[None, :], lam_m, axis=1)
     p_atm_wm2 = 2.0 * math.pi * float(np.trapezoid(cos_t * sin_t * inner_lam, theta))
@@ -153,7 +152,9 @@ def compute_radiative_sky_cooling(cfg: SolarpunkNodeConfig, p_it_sol_kw: float) 
     q_net_wm2 = p_rad_wm2 - p_atm_wm2 - p_sun_abs_wm2 - p_conv_gain_or_loss_wm2
     q_rejected_max_kw = (q_net_wm2 * cfg.pdrc_area_m2) / 1000.0
 
-    q_unrecycled_kw = p_it_sol_kw * (1.0 - cfg.mof_heat_fraction - cfg.algae_heat_fraction)
+    q_unrecycled_it_kw = p_it_sol_kw * (1.0 - cfg.mof_heat_fraction - cfg.algae_heat_fraction)
+    # Include circulation pump dissipation inside primary thermal loop routed to the sky roof
+    q_roof_load_kw = q_unrecycled_it_kw + cfg.pump_power_kw
     p_total_base_kw = cfg.p_it_baseline_kw * cfg.pue_baseline
     p_total_sol_kw = p_it_sol_kw + cfg.pump_power_kw
     pue_solarpunk = p_total_sol_kw / p_it_sol_kw
@@ -166,8 +167,9 @@ def compute_radiative_sky_cooling(cfg: SolarpunkNodeConfig, p_it_sol_kw: float) 
         "q_net_wm2": float(q_net_wm2),
         "pdrc_area_m2": cfg.pdrc_area_m2,
         "q_rejected_max_kw": float(q_rejected_max_kw),
-        "q_unrecycled_kw": float(q_unrecycled_kw),
-        "passive_headroom_kw": float(q_rejected_max_kw - q_unrecycled_kw),
+        "q_unrecycled_kw": float(q_unrecycled_it_kw),
+        "q_roof_total_load_kw": float(q_roof_load_kw),
+        "passive_headroom_kw": float(q_rejected_max_kw - q_roof_load_kw),
         "p_total_baseline_kw": float(p_total_base_kw),
         "p_total_solarpunk_kw": float(p_total_sol_kw),
         "total_grid_reduction_factor": float(p_total_base_kw / p_total_sol_kw),
@@ -182,39 +184,77 @@ def compute_mof_algae_symbiosis(
     p_total_sol_kw: float,
     p_total_base_kw: float,
 ) -> Dict[str, Any]:
-    """Evaluate 2-stage Pinch Exergy Cascade: MOF-303 water harvesting & algae symbiosis."""
+    """
+    Evaluate 2-stage Pinch Exergy Cascade with explicit First-Law control-volume
+    thermal and water boundary accounting: MOF-303 atmospheric water condenser + PBR facade.
+    """
     q_mof_kw = p_it_sol_kw * cfg.mof_heat_fraction
     q_algae_kw = p_it_sol_kw * cfg.algae_heat_fraction
     q_reused_kw = q_mof_kw + q_algae_kw
+    q_roof_load_kw = p_it_sol_kw * (1.0 - cfg.mof_heat_fraction - cfg.algae_heat_fraction) + cfg.pump_power_kw
 
-    # Stage 1: MOF-303 (2025 Chemistry Nobel) water harvesting via 48-55 C chip condenser
+    # Stage 1: MOF-303 atmospheric water harvesting (48-55 C) + air-cooled condenser heat rejection
     q_mof_kj_day = q_mof_kw * 86400.0
     water_harvested_l_day = (q_mof_kj_day * cfg.mof_regen_efficiency) / cfg.mof_desorption_enthalpy_kj_kg
+    h_fg_kj_kg = 2257.0  # Latent heat of condensation rejected across finned condenser
+    q_mof_condensation_reject_kw = (water_harvested_l_day * h_fg_kj_kg) / 86400.0
+    q_mof_sensible_reject_kw = max(0.0, q_mof_kw - q_mof_condensation_reject_kw)
+    # Representative sorbent sizing: 6 thermal cycles/day at working capacity 0.117 kg/kg/cycle
+    mof_sorbent_mass_kg = water_harvested_l_day / (6.0 * 0.1167)
+
+    # Closed-loop PBR water consumption (photosynthetic assimilation ~0.55 L/kg + blowdown/makeup -> 15 L/day)
+    pbr_water_consumption_l_day = 15.0
+    net_potable_water_export_l_day = water_harvested_l_day - pbr_water_consumption_l_day
 
     e_sol_day_kwh = p_total_sol_kw * 24.0
+    e_it_day_kwh = p_it_sol_kw * 24.0
     e_base_day_kwh = p_total_base_kw * 24.0
 
+    # Dual WUE reporting: Facility denominator (11.72 kW) vs IT denominator (11.42 kW), gross and net
     wue_solarpunk = -water_harvested_l_day / e_sol_day_kwh
+    wue_facility_net = -net_potable_water_export_l_day / e_sol_day_kwh
+    wue_it_gross = -water_harvested_l_day / e_it_day_kwh
+    wue_it_net = -net_potable_water_export_l_day / e_it_day_kwh
     water_consumed_base_l_day = cfg.wue_baseline_l_per_kwh * e_base_day_kwh
 
     # Green Grid Energy Reuse Effectiveness: ERE = (P_total - Q_reused) / P_IT
     ere_solarpunk = (p_total_sol_kw - q_reused_kw) / p_it_sol_kw
 
-    # Stage 2: Chlorella vulgaris photobioreactor facade + 2024 Nobel carbonic anhydrase
+    # Stage 2: Chlorella vulgaris photobioreactor facade (solar-driven photosynthesis, thermoregulated by Q_algae)
     dry_biomass_kg_day = cfg.pbr_area_m2 * cfg.pbr_areal_productivity_kg_m2_day
     co2_captured_kg_day = dry_biomass_kg_day * 1.83
     o2_released_kg_day = dry_biomass_kg_day * 1.33
+    # Solar-driven chemical enthalpy stored in biomass (~20 MJ/kg dry); compute heat Q_algae stabilizes T and dissipates to ambient air
+    biomass_hhv_mj_kg = 20.0
+    pbr_solar_chem_power_kw = (dry_biomass_kg_day * biomass_hhv_mj_kg * 1000.0) / 86400.0
+    q_pbr_facade_loss_wm2 = (q_algae_kw * 1000.0) / cfg.pbr_area_m2
+
+    # First-Law electrical-thermal bus closure check
+    total_thermal_dissipation_accounted_kw = q_roof_load_kw + q_mof_condensation_reject_kw + q_mof_sensible_reject_kw + q_algae_kw
+    energy_balance_residual_kw = p_total_sol_kw - total_thermal_dissipation_accounted_kw
 
     return {
         "q_mof_kw": float(q_mof_kw),
+        "q_mof_condensation_reject_kw": float(q_mof_condensation_reject_kw),
+        "q_mof_sensible_reject_kw": float(q_mof_sensible_reject_kw),
+        "mof_sorbent_mass_kg": float(mof_sorbent_mass_kg),
         "q_algae_kw": float(q_algae_kw),
+        "q_pbr_facade_loss_wm2": float(q_pbr_facade_loss_wm2),
+        "pbr_solar_chem_power_kw": float(pbr_solar_chem_power_kw),
         "q_reused_kw": float(q_reused_kw),
+        "total_thermal_dissipation_accounted_kw": float(total_thermal_dissipation_accounted_kw),
+        "energy_balance_residual_kw": float(energy_balance_residual_kw),
         "ere_baseline": cfg.pue_baseline,
         "ere_solarpunk": float(ere_solarpunk),
         "water_consumed_baseline_l_day": float(water_consumed_base_l_day),
         "water_harvested_solarpunk_l_day": float(water_harvested_l_day),
+        "pbr_water_consumption_l_day": float(pbr_water_consumption_l_day),
+        "net_potable_water_export_l_day": float(net_potable_water_export_l_day),
         "wue_baseline_l_per_kwh": cfg.wue_baseline_l_per_kwh,
         "wue_solarpunk_l_per_kwh": float(wue_solarpunk),
+        "wue_facility_net_l_per_kwh": float(wue_facility_net),
+        "wue_it_gross_l_per_kwh": float(wue_it_gross),
+        "wue_it_net_l_per_kwh": float(wue_it_net),
         "dry_biomass_kg_day": float(dry_biomass_kg_day),
         "co2_captured_kg_day": float(co2_captured_kg_day),
         "o2_released_kg_day": float(o2_released_kg_day),
@@ -281,6 +321,12 @@ def compute_acoustic_metamaterial_cloak(cfg: SolarpunkNodeConfig) -> Dict[str, A
     sol_a_lin = np.power(10.0, (solarpunk_spl + a_wt) / 10.0)
     sol_total_dba = 10.0 * math.log10(float(np.sum(sol_a_lin)))
 
+    # Conservative structural flanking floor (capped at flanking_limit_db = 58.0 dB across enclosure seams)
+    flanking_limit_db = 58.0
+    tl_flanked_db = np.minimum(tl_db, flanking_limit_db)
+    solarpunk_flanked_spl = baseline_spl - tl_flanked_db
+    sol_flanked_dba = 10.0 * math.log10(float(np.sum(np.power(10.0, (solarpunk_flanked_spl + a_wt) / 10.0))))
+
     band_mask = (freqs >= 50.0) & (freqs <= 250.0)
     mean_tl_band_db = float(np.mean(tl_db[band_mask]))
     max_tl_band_db = float(np.max(tl_db[band_mask]))
@@ -296,6 +342,8 @@ def compute_acoustic_metamaterial_cloak(cfg: SolarpunkNodeConfig) -> Dict[str, A
         "noise_baseline_dba": cfg.noise_baseline_dba,
         "noise_solarpunk_dba": float(sol_total_dba),
         "noise_reduction_dba": float(cfg.noise_baseline_dba - sol_total_dba),
+        "flanking_limit_db": flanking_limit_db,
+        "noise_flanking_limited_dba": float(sol_flanked_dba),
     }
 
 

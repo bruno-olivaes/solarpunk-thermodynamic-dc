@@ -47,6 +47,8 @@ def test_mof_water_harvest_and_algae_symbiosis():
     )
     assert sym["wue_solarpunk_l_per_kwh"] < 0.0
     assert sym["water_harvested_solarpunk_l_day"] > 100.0
+    assert sym["net_potable_water_export_l_day"] > 95.0
+    assert abs(sym["energy_balance_residual_kw"]) < 1e-6
     assert sym["ere_solarpunk"] < 0.35
     assert sym["co2_captured_kg_day"] > 25.0
 
@@ -56,6 +58,7 @@ def test_acoustic_metamaterial_suppression():
     ac = compute_acoustic_metamaterial_cloak(cfg)
     assert ac["mean_tl_50_250hz_db"] > 38.0
     assert ac["noise_solarpunk_dba"] < 35.0
+    assert ac["noise_flanking_limited_dba"] < 35.0
     assert ac["noise_reduction_dba"] > 40.0
 
 
